@@ -14,7 +14,7 @@ export class YouTubeTranscript implements INodeType {
         name: 'youTubeTranscript',
         icon: 'file:YouTube.icon.svg',
         group: ['transform'],
-        version: 1,
+        version: 2,
         description: 'Gets the transcript of a YouTube video.',
         defaults: {
             name: 'YouTube Transcript',

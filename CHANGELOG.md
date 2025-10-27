@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2024-10-27
+
+### Added
+- **Proxy Support**: New optional "Proxy" field to route all HTTP requests through a proxy server
+  - Supports HTTP, HTTPS, and SOCKS5 proxy protocols
+  - Helps bypass rate limiting and geographical restrictions
+  - Available for both "Get Transcript" and "List Available Languages" operations
+- **Enhanced Request Headers**: All requests now include realistic browser headers (User-Agent, Accept-Language, Accept)
+  - Reduces detection as automated requests
+  - Improves compatibility with YouTube's anti-bot measures
+
+### Improved
+- **Better Error Handling for Rate Limits**: Specific error messages for HTTP 429 (Too Many Requests)
+  - Clear guidance on how to resolve rate limiting issues
+  - Suggests using proxy, waiting, or changing network
+- **More Robust HTTP Requests**: Improved request configuration to simulate real browser behavior
+
+### Fixed
+- Enhanced reliability when dealing with YouTube's rate limiting mechanisms
+
+---
+
 ## [0.1.0] - 2024-10-27
 
 ### Added

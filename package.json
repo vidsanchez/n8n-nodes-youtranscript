@@ -1,6 +1,6 @@
 {
     "name": "n8n-nodes-youtranscript",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "Fetch YouTube video transcripts.",
     "license": "MIT",
     "homepage": "https://github.com/vidsanchez/n8n-nodes-youtranscript/",

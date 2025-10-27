@@ -67,6 +67,19 @@ export class YouTubeTranscript implements INodeType {
                     },
                 },
             },
+            {
+                displayName: 'Proxy',
+                name: 'proxy',
+                type: 'string',
+                default: '',
+                placeholder: 'http://proxy.example.com:8080',
+                description: 'Optional proxy URL to use for requests (e.g., http://proxy.example.com:8080 or socks5://proxy.example.com:1080)',
+                displayOptions: {
+                    show: {
+                        operation: ['getTranscript', 'listLanguages'],
+                    },
+                },
+            },
         ],
     };
 
@@ -77,10 +90,23 @@ export class YouTubeTranscript implements INodeType {
 
         for (let i = 0; i < items.length; i++) {
             const videoId = this.getNodeParameter('videoId', i, '') as string;
+            const proxy = this.getNodeParameter('proxy', i, '') as string;
+
+            // Prepare request options with proxy if provided
+            const requestOptions: any = {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept-Language': 'en-US,en;q=0.9',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                },
+            };
+            if (proxy) {
+                requestOptions.proxy = proxy;
+            }
 
             try {
                 const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
-                const response = await this.helpers.httpRequest({ url: watchUrl });
+                const response = await this.helpers.httpRequest({ url: watchUrl, ...requestOptions });
                 const html = response.toString();
 
                 const apiKeyMatch = html.match(/"INNERTUBE_API_KEY":\s*"([a-zA-Z0-9_-]+)"/);
@@ -103,6 +129,7 @@ export class YouTubeTranscript implements INodeType {
                         videoId,
                     },
                     json: true,
+                    ...requestOptions,
                 });
 
                 const innertubeData: any = innertubeResponse;
@@ -147,7 +174,7 @@ export class YouTubeTranscript implements INodeType {
                     throw new Error(`No transcript found for languages: ${languages.join(', ')}`);
                 }
 
-                const transcriptXmlResponse = await this.helpers.httpRequest({ url: transcriptTrack.url });
+                const transcriptXmlResponse = await this.helpers.httpRequest({ url: transcriptTrack.url, ...requestOptions });
                 const transcriptXml = transcriptXmlResponse.toString();
 
                 const result: any = convert.xml2js(transcriptXml, { compact: true });
@@ -169,9 +196,19 @@ export class YouTubeTranscript implements INodeType {
                 });
             } catch (error) {
                 if (this.continueOnFail()) {
-                    const err = error as Error;
-                    returnData.push({ json: { error: err.message }, error: new NodeOperationError(this.getNode(), err) });
+                    const err = error as any;
+                    const errorMessage = err.response?.status === 429 
+                        ? 'YouTube rate limit exceeded (429). Try using a proxy or waiting before retrying.'
+                        : err.message;
+                    returnData.push({ json: { error: errorMessage }, error: new NodeOperationError(this.getNode(), err) });
                     continue;
+                }
+                const err = error as any;
+                if (err.response?.status === 429) {
+                    throw new NodeOperationError(
+                        this.getNode(),
+                        'YouTube rate limit exceeded (429). Please try: 1) Using a proxy in the Proxy field, 2) Waiting a few minutes before retrying, or 3) Using a different network.',
+                    );
                 }
                 throw error;
             }
